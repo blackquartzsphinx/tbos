@@ -1,0 +1,207 @@
+shaders
+-parallel processing
+--running a function on every pixel at once
+--rather than running each pixel through a single "pipe" one at a time, run each pixel through a network of "pipes" at the same time
+--thats how gpu works
+-to run each pipe in parallel, they have to be independent of each other
+
+#ifdef GL_ES
+precision mediump float;
+//precision of the shader. highp or lowp are also options
+#endif
+
+uniform float u_time;
+
+void main() {
+  gl_FragColor = vec4(r,g,b,a);
+}
+
+use floats between 0.0 and 1.0
+
+uniforms
+-inputs from the CPU to the GPU
+-one way -- cannot be modified by the shader
+-examples
+--float u_time
+---time in seconds
+--vec2 u_mouse
+---mouse position in screen pixels
+----can also be a vec4, with mouse click inputs in the zw position
+--vec2 u_resolution
+---canvas size in pixels (width,height)
+
+#ifdef GL_ES
+precision highp float;
+#endif
+
+uniform float u_time;
+
+void main() {
+	gl_FragColor = vec4(abs(sin(u_time)),abs(sin(u_time-1.0)),abs(sin(u_time-2.0)),1.0);
+}
+
+tried to make a basic rainbow cycle, idk if I balanced all of the times right
+
+gl_FragCoord
+-static input, but isn't the same on each pixel
+--not a uniform, a varying
+
+#ifdef GL_ES
+precision mediump float;
+#endif
+
+uniform vec2 u_resolution;
+uniform vec2 u_mouse;
+uniform float u_time;
+
+void main() {
+	vec2 st = gl_FragCoord.xy/u_resolution;
+    vec2 ms = u_mouse/u_resolution;
+	gl_FragColor = vec4(abs(sin(u_time)),st.y*ms.y,st.x*ms.x,1.0);
+}
+
+little doohickey I did to mess around w/ mouse position, fragcord, and time all in the same shader
+
+1.0,1.0 is top right
+
+#ifdef GL_ES
+precision mediump float;
+#endif
+
+uniform float u_time;
+uniform vec2 u_resolution;
+
+vec4 pink() {
+    return vec4(1.0,0.25,0.75,1.0);
+}
+
+vec4 blue() {
+    return vec4(0.0,1.0,1.0,1.0);
+}
+
+vec4 white() {
+    return vec4(1.0,1.0,1.0,1.0);
+}
+
+void main() {
+    vec2 st = gl_FragCoord.xy/u_resolution;
+	if ( st.y > 0.4 && st.y < 0.6)
+    {
+    	gl_FragColor = white();
+    }
+    else if ( st.y > 0.2 && st.y < 0.8)
+    {
+    	gl_FragColor = pink();    
+    }
+    else
+    {
+        gl_FragColor = blue();
+    }
+}
+
+Profoundly inelegant method of drawing the rust programmer national flag. I was looking up how if-else statements worked in GLSL and everything online was saying how they slowed the shader down, which is probably true and I'm sure there are fancier ways to do this. But! It works.
+
+#ifdef GL_ES
+precision mediump float;
+#endif
+
+uniform vec2 u_resolution;
+
+vec4 flag() {
+    vec2 st = gl_FragCoord.xy/u_resolution;
+    if ( st.y > 0.4 && st.y < 0.6) {
+        return vec4(1.0,1.0,1.0,1.0);
+    } else if ( st.y > 0.2 && st.y < 0.8) {
+        return vec4(1.0,0.25,0.75,1.0);
+    } else {
+        return vec4(0.0,1.0,1.0,1.0);
+    }
+}
+
+void main() {
+	gl_FragColor = flag();
+}
+
+Second version of the cga pride flag shader, took out unneccessary functions & simplified it. Still uses if-elses, so still is naughty, but oh well.
+
+linear interpolation/one dimensional functions
+-this chapter was a bit hard for me but i think i'm getting it
+-step(x,y)
+--checks y against x. if y is smaller, it returns 0.0, but if y is larger, it returns 1.0
+-smoothstep(x,y,z)
+--interpolates z between y and x. if z is smaller than x, it returns x. if it's larger than y, it returns y. in between is where the magic of linear interpolation happens
+---complicated math shit that I need to look more into 
+
+#ifdef GL_ES
+precision mediump float;
+#endif
+
+#define PI 3.14159265359
+
+uniform vec2 u_resolution;
+uniform vec2 u_mouse;
+uniform float u_time;
+
+float plot(vec2 st, float pct){
+  return  smoothstep( pct-0.02, pct, st.y) -
+          smoothstep( pct, pct+0.02, st.y);
+}
+
+void main() {
+    vec2 st = gl_FragCoord.xy/u_resolution;
+
+    float y = (sin(st.x+u_time*5.0)+1.0)/2.0;
+
+    vec3 color = vec3(y,0.0,1.0-y);
+
+    float pct = plot(st,y);
+    color = (1.0-pct)*color+pct*vec3(1.0,1.0,1.0);
+
+    gl_FragColor = vec4(color,1.0);
+}
+// made it do the wiggly worm
+
+-how does the plot function work
+--it essentially makes a bump in the output by returning 0.0 until you get close to (x,f(x)) at which point it transitions into 1.0
+---by multiplying this by a color and adding it to your output you can essentially graph a function
+
+colors
+-colors are essentially 3- or 4-dimensional vectors/structs in glsl
+-can be referenced in multiple ways
+--vector[0]/[1]/[2]/[3]
+--vector.x/.y/.z/.w
+--vector.r/.g/.b/.a
+--vector.s/.t/.p/.q
+---this one is apparently about texture coordinates? idk
+-all ways are equivalent
+-swizzle
+--can essentially assign different aspects of each color vector independantly
+--magenta = yellow.rbg would flip around the green and the blue channels
+-mix
+--mix(a,b,c) mixes a and b according to the percentage outlined by c -- closer to 1.0 is closer to b, closer to 0.0 is closer to a.
+---if c is a vector similar to a and b, it will mix each component of the vector individually
+
+#ifdef GL_ES
+precision mediump float;
+#endif
+
+uniform vec2 u_resolution;
+uniform float u_time;
+
+vec3 colorA = vec3(0.1,0.0,0.1);
+vec3 colorB = vec3(1.0,0.0,0.2);
+
+void main() {
+    vec3 color = vec3(0.0);
+
+    float timing = abs(sin(u_time));
+    float pct = smoothstep(0.99,1.0,timing);
+
+    color = mix(colorA, colorB, pct);
+
+    gl_FragColor = vec4(color,1.0);
+}
+
+//I tried to write a transition that captured the feeling of an earache -- mostly an ambient air of unease, punctuated by searing pain.
+
+
