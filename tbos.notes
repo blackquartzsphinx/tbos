@@ -204,4 +204,108 @@ void main() {
 
 //I tried to write a transition that captured the feeling of an earache -- mostly an ambient air of unease, punctuated by searing pain.
 
+EXERCISES:
 
+ * Compose a gradient that resembles a William Turner sunset
+ 
+#ifdef GL_ES
+precision mediump float;
+#endif
+
+#define PI 3.14159265359
+
+uniform vec2 u_resolution;
+uniform vec2 u_mouse;
+uniform float u_time;
+
+vec3 colorA = vec3(0.537,0.549,0.569);
+vec3 colorB = vec3(0.733,0.535,0.090);
+
+void main() {
+    vec2 st = gl_FragCoord.xy/u_resolution.xy;
+    vec3 color = vec3(0.0);
+    float pct = pow(st.y,0.5);
+    color = mix(colorB,colorA,pct);
+    gl_FragColor = vec4(color,1.0);
+}
+
+ * Animate a transition between a sunrise and sunset using u_time.
+
+#ifdef GL_ES
+precision mediump float;
+#endif
+
+#define PI 3.14159265359
+
+uniform vec2 u_resolution;
+uniform vec2 u_mouse;
+uniform float u_time;
+
+vec3 sunriseA = vec3(0.298,0.404,0.616);
+vec3 sunriseB = vec3(0.580,0.525,0.620);
+
+
+vec3 daytimeA = vec3(0.377,0.695,0.880);
+vec3 daytimeB = vec3(1.000,0.924,0.320);
+
+void main() {
+    vec2 st = gl_FragCoord.xy/u_resolution.xy;
+    vec3 color = vec3(0.0);
+    float pct = pow(st.y,0.5);
+    float timer = (sin(u_time*0.5))/2.0+0.5;
+    
+    vec3 colorA = mix(sunriseA,daytimeA,timer);
+    vec3 colorB = mix(sunriseB,daytimeB,timer);
+    
+    
+    color = mix(colorB,colorA,pct);
+    gl_FragColor = vec4(color,1.0);
+}
+
+
+
+ * Can you make a rainbow using what we have learned so far?
+
+#ifdef GL_ES
+precision mediump float;
+#endif
+
+#define PI 3.14159265359
+
+uniform vec2 u_resolution;
+uniform vec2 u_mouse;
+uniform float u_time;
+
+vec3 rainbow (float x) {
+    return vec3(1.0-smoothstep(0.167,0.333, x)+smoothstep(0.666,0.833,x),
+                smoothstep(0.0,0.167, x)-smoothstep(0.5,0.666,x),
+                smoothstep(0.333,0.5, x)-smoothstep(0.833,1.0,x));
+}
+
+void main() {
+    vec2 st = gl_FragCoord.xy/u_resolution.xy;
+    vec3 color = rainbow(st.x);
+
+    gl_FragColor = vec4(color,1.0);
+}
+
+ * Use the step() function to create a colorful flag.
+
+#ifdef GL_ES
+precision mediump float;
+#endif
+
+#define PI 3.14159265359
+
+uniform vec2 u_resolution;
+uniform vec2 u_mouse;
+uniform float u_time;
+
+void main() {
+    vec2 st = gl_FragCoord.xy/u_resolution.xy;
+
+    vec3 color =  (step(0.0,st.y)-step(0.2,st.y)+step(0.8,st.y))*vec3(0.0,1.0,1.0) 
+        + (step(0.2,st.y)-step(0.4,st.y)+step(0.6,st.y)-step(0.8,st.y))*vec3(1.0,0.5,1.0) 
+        + (step(0.4,st.y) - step(0.6,st.y))*vec3(1.0);
+    gl_FragColor = vec4(color,1.0);
+}
